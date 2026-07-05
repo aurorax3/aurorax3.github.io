@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<title>Recomp Log</title>
+<meta name="theme-color" content="#0c0a09" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="icon" href="icon-192.png" />
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body, html {
+    margin: 0; padding: 0;
+    background: #0c0a09;
+    color: #f5f5f4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    height: 100%;
+    overscroll-behavior-y: contain;
+  }
+  #app { display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 72px; }
+  header {
+    padding: 24px 20px 14px;
+    border-bottom: 1px solid #292524;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    position: sticky; top: 0; background: #0c0a09; z-index: 10;
+  }
+  header h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+  header p { margin: 2px 0 0; font-size: 12px; color: #78716c; }
+  #saved-flash { font-size: 12px; color: #34d399; font-weight: 600; opacity: 0; transition: opacity .3s; }
+  #saved-flash.show { opacity: 1; }
+  main { flex: 1; padding: 20px; }
+  section { margin-bottom: 24px; }
+  .row-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .label { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .sublabel { font-size: 12px; color: #78716c; }
+  .progress-track { width: 100%; height: 10px; border-radius: 999px; background: #292524; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width .3s; }
+  input[type=number], input[type=text], select {
+    width: 100%; background: #1c1917; border: 1px solid #292524; border-radius: 12px;
+    padding: 12px 14px; font-size: 15px; color: #f5f5f4; margin-top: 10px;
+    outline: none;
+  }
+  input:focus, select:focus { border-color: #10b981; }
+  .btn {
+    width: 100%; background: #10b981; color: #0c0a09; font-weight: 700;
+    border: none; border-radius: 12px; padding: 13px; font-size: 14px; margin-top: 14px;
+  }
+  .btn:active { background: #059669; }
+  .btn-secondary { background: #0ea5e9; }
+  .row-gap { display: flex; gap: 8px; }
+  .row-gap input { margin-top: 0; }
+  .btn-inline { width: auto; padding: 0 18px; margin-top: 0; }
+  .chip-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
+  .chip {
+    flex-shrink: 0; padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    background: #1c1917; border: 1px solid #292524; color: #a8a29e; white-space: nowrap;
+  }
+  .chip.active { background: #10b981; color: #0c0a09; border-color: #10b981; }
+  .card { background: #1c1917; border: 1px solid #292524; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .card h3 { margin: 0; font-size: 14px; }
+  .card .meta { font-size: 11px; color: #78716c; }
+  .watch-link { font-size: 11px; color: #34d399; font-weight: 600; text-decoration: none; white-space: nowrap; }
+  .set-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .set-row span { font-size: 11px; color: #78716c; width: 40px; flex-shrink: 0; }
+  .set-row input { margin-top: 0; flex: 1; padding: 9px 10px; font-size: 14px; }
+  .chart-box { background: #1c1917; border: 1px solid #292524; border-radius: 16px; padding: 12px; }
+  .legend { display: flex; gap: 16px; margin-top: 8px; font-size: 11px; color: #78716c; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  nav {
+    position: fixed; bottom: 0; left: 0; right: 0; background: #0c0a09;
+    border-top: 1px solid #292524; display: flex; padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav button {
+    flex: 1; background: none; border: none; color: #78716c; padding: 10px 0 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 600;
+  }
+  nav button.active { color: #34d399; }
+  nav svg { width: 21px; height: 21px; }
+  .unit-toggle { display: flex; gap: 8px; margin-top: 10px; }
+  .unit-toggle button {
+    flex: 1; padding: 11px; border-radius: 12px; border: 1px solid #292524; background: #1c1917;
+    color: #a8a29e; font-size: 14px; font-weight: 600;
+  }
+  .unit-toggle button.active { background: #0ea5e9; color: #0c0a09; border-color: #0ea5e9; }
+  .note { font-size: 12px; color: #57534e; line-height: 1.6; margin-top: 10px; }
+  #install-banner {
+    display: none; background: #10b981; color: #0c0a09; font-size: 13px; font-weight: 600;
+    padding: 10px 16px; text-align: center;
+  }
+  #install-banner button {
+    margin-left: 10px; background: #0c0a09; color: #10b981; border: none; border-radius: 8px;
+    padding: 5px 10px; font-size: 12px; font-weight: 700;
+  }
+</style>
+</head>
+<body>
+<div id="install-banner">Install this app on your phone <button id="install-btn">Install</button></div>
+<div id="app"></div>
+
+<script>
+/* ---------------- Program data (Jeff Nippard Fundamentals Hypertrophy Program) ---------------- */
+const ex = (name, sets, reps, rpe, rest) => ({ name, sets, reps, rpe, rest });
+const PROGRAMS = {
+  fullbody: { label: "Full Body (3x/wk)", phases: { A: [
+    { day: "Full Body #1", exercises: [
+      ex("Back Squat",3,"6",7,"3-4min"), ex("Barbell Bench Press",3,"8",7,"3-4min"),
+      ex("Lat Pulldown",3,"10",8,"2-3min"), ex("Romanian Deadlift",3,"10",7,"2-3min"),
+      ex("Assisted Dip",3,"8",7,"1-2min"), ex("Standing Calf Raise",3,"10",8,"1-2min"),
+      ex("Dumbbell Supinated Curl",3,"10",8,"1-2min") ]},
+    { day: "Full Body #2", exercises: [
+      ex("Deadlift",3,"5",7,"3-4min"), ex("Military Press",3,"8",8,"3-4min"),
+      ex("Chest-Supported T-Bar Row",3,"12",8,"2-3min"), ex("Leg Extension",3,"12",8,"1-2min"),
+      ex("Cable Flye",3,"12",8,"1-2min"), ex("Crunch",3,"12",7,"1-2min"),
+      ex("Dumbbell Skull Crusher",3,"12",8,"1-2min") ]},
+    { day: "Full Body #3", exercises: [
+      ex("Dumbbell Walking Lunge",3,"10 each leg",8,"2-3min"), ex("Dumbbell Incline Press",3,"8",7,"2-3min"),
+      ex("Reverse Grip Lat Pulldown",3,"10",8,"2-3min"), ex("Barbell Hip Thrust",3,"12",8,"2-3min"),
+      ex("Seated Face Pull",3,"12",8,"1-2min"), ex("Dumbbell Lateral Raise",3,"10",8,"1-2min"),
+      ex("Lying Leg Curl",3,"10",8,"1-2min") ]},
+  ], B: [
+    { day: "Full Body #1", exercises: [
+      ex("Back Squat",3,"8",8,"3-4min"), ex("Dumbbell Seated Shoulder Press",3,"10",8,"3-4min"),
+      ex("Single-Arm Pulldown",3,"12",9,"2-3min"), ex("Barbell Hip Thrust",3,"8",9,"2-3min"),
+      ex("Pec Deck",3,"15",9,"1-2min"), ex("Reverse Pec Deck",3,"15",9,"1-2min"),
+      ex("Cable Lateral Raise",3,"12",9,"1-2min") ]},
+    { day: "Full Body #2", exercises: [
+      ex("Deadlift",3,"3",8,"3-4min"), ex("Close-Grip Bench Press",3,"5",7,"3-4min"),
+      ex("Dumbbell Row",3,"12",8,"2-3min"), ex("Dumbbell Walking Lunge",3,"12 each leg",8,"1-2min"),
+      ex("Assisted Dip",3,"12",8,"1-2min"), ex("Bicycle Crunch",3,"10",7,"1-2min"),
+      ex("Single-Arm Cable Curl",3,"12",8,"1-2min") ]},
+    { day: "Full Body #3", exercises: [
+      ex("Back Squat",3,"5",8,"2-3min"), ex("Barbell Bench Press",3,"10",8,"2-3min"),
+      ex("Neutral-Grip Pulldown",3,"15",8,"2-3min"), ex("Lying Leg Curl",3,"12",8,"2-3min"),
+      ex("Seated Face Pull",3,"15",8,"1-2min"), ex("Single-Arm Rope Tricep Extension",3,"12",8,"1-2min"),
+      ex("Standing Calf Raise",3,"10",8,"1-2min") ]},
+  ]}},
+  upperlower: { label: "Upper/Lower (4x/wk)", phases: { A: [
+    { day: "Lower Body #1", exercises: [
+      ex("Back Squat",3,"6",7,"3-4min"), ex("Romanian Deadlift",3,"10",7,"2-3min"),
+      ex("Barbell Hip Thrust",3,"12",8,"2-3min"), ex("Leg Extension",3,"12",9,"1-2min"),
+      ex("Lying Leg Curl",3,"12",9,"1-2min"), ex("Machine Seated Hip Abduction",3,"6",7,"1-2min"),
+      ex("Crunch",3,"12",7,"1-2min") ]},
+    { day: "Upper Body #1", exercises: [
+      ex("Barbell Bench Press",3,"5",7,"3-4min"), ex("Lat Pulldown",3,"10",8,"2-3min"),
+      ex("Military Press",3,"10",7,"3-4min"), ex("Chest-Supported T-Bar Row",3,"12",8,"2-3min"),
+      ex("Cable Flye",3,"12",8,"1-2min"), ex("Dumbbell Supinated Curl",3,"10",8,"1-2min"),
+      ex("Single-Arm Rope Tricep Extension",3,"12",8,"1-2min") ]},
+    { day: "Lower Body #2", exercises: [
+      ex("Deadlift",3,"8",7,"3-4min"), ex("Dumbbell Walking Lunge",3,"10 each leg",8,"2-3min"),
+      ex("Single-Leg Leg Extension",3,"15",8,"1-2min"), ex("Single-Leg Lying Leg Curl",3,"15",8,"1-2min"),
+      ex("Machine Seated Hip Abduction",3,"15",9,"1-2min"), ex("Standing Calf Raise",3,"12",8,"1-2min"),
+      ex("Plank",3,"20sec",8,"1-2min") ]},
+    { day: "Upper Body #2", exercises: [
+      ex("Dumbbell Incline Press",3,"8",8,"2-3min"), ex("Reverse Grip Lat Pulldown",3,"8",8,"2-3min"),
+      ex("Assisted Dip",3,"10",7,"2-3min"), ex("Barbell Bent Over Row",3,"12",7,"2-3min"),
+      ex("Dumbbell Lateral Raise",3,"15",8,"1-2min"), ex("Seated Face Pull",3,"15",8,"1-2min"),
+      ex("Hammer Curl",3,"8",9,"1-2min") ]},
+  ], B: [
+    { day: "Lower Body #1", exercises: [
+      ex("Deadlift",3,"5",8,"3-4min"), ex("Goblet Squat",3,"12",8,"2-3min"),
+      ex("Dumbbell Single-Leg Hip Thrust",3,"10",9,"2-3min"), ex("Leg Press",3,"12",8,"1-2min"),
+      ex("Lying Leg Curl",3,"15",9,"1-2min"), ex("Standing Calf Raise",3,"8",8,"1-2min"),
+      ex("Bicycle Crunch",3,"12",8,"1-2min") ]},
+    { day: "Upper Body #1", exercises: [
+      ex("Barbell Bench Press",3,"8",8,"3-4min"), ex("Single-Arm Pulldown",3,"8",8,"2-3min"),
+      ex("Dumbbell Seated Shoulder Press",3,"12",7,"2-3min"), ex("Dumbbell Row",3,"12",8,"2-3min"),
+      ex("Assisted Dip",3,"6",8,"1-2min"), ex("Seated Face Pull",3,"15",9,"1-2min"),
+      ex("EZ Bar Curl",3,"12",9,"1-2min") ]},
+    { day: "Lower Body #2", exercises: [
+      ex("Back Squat",3,"8",8,"3-4min"), ex("Barbell Hip Thrust",3,"8",8,"2-3min"),
+      ex("Romanian Deadlift",3,"12",8,"2-3min"), ex("Seated Leg Curl",3,"8",9,"1-2min"),
+      ex("Standing Calf Raise",3,"6",9,"1-2min"), ex("Hanging Leg Raise",3,"6",8,"1-2min"),
+      ex("Machine Seated Hip Abduction",3,"20",9,"1-2min") ]},
+    { day: "Upper Body #2", exercises: [
+      ex("Military Press",3,"6",8,"3-4min"), ex("Neutral-Grip Pulldown",3,"6",8,"3-4min"),
+      ex("Dumbbell Incline Press",3,"8",8,"2-3min"), ex("Cable Seated Row",3,"8",9,"2-3min"),
+      ex("Cable Lateral Raise",3,"12",8,"1-2min"), ex("Reverse Pec Deck",3,"12",8,"1-2min"),
+      ex("Single-Arm Cable Curl",3,"15",9,"1-2min") ]},
+  ]}},
+  bodypart: { label: "Body Part Split (5x/wk)", phases: { A: [
+    { day: "Chest & Triceps", exercises: [
+      ex("Barbell Bench Press",3,"6",7,"3-4min"), ex("Dumbbell Incline Press",3,"8",8,"2-3min"),
+      ex("Cable Flye",3,"12",8,"1-2min"), ex("Assisted Dip",3,"10",7,"1-2min"),
+      ex("Dumbbell Skull Crusher",3,"12",8,"1-2min") ]},
+    { day: "Legs & Abs", exercises: [
+      ex("Back Squat",3,"6",7,"3-4min"), ex("Romanian Deadlift",3,"8",7,"2-3min"),
+      ex("Barbell Hip Thrust",3,"12",8,"2-3min"), ex("Leg Extension",3,"12",8,"1-2min"),
+      ex("Leg Curl",3,"12",8,"1-2min"), ex("Standing Calf Raise",2,"8",7,"1-2min"),
+      ex("Crunch",2,"12",7,"1-2min") ]},
+    { day: "Back & Biceps", exercises: [
+      ex("Reverse Grip Lat Pulldown",3,"8",8,"2-3min"), ex("Cable Seated Row",3,"10",8,"2-3min"),
+      ex("Chest-Supported T-Bar Row",3,"12",8,"2-3min"), ex("Seated Face Pull",3,"15",8,"1-2min"),
+      ex("Dumbbell Supinated Curl",3,"12",8,"1-2min") ]},
+    { day: "Legs & Abs 2", exercises: [
+      ex("Deadlift",3,"5",7,"3-4min"), ex("Dumbbell Walking Lunge",3,"10 each leg",8,"2-3min"),
+      ex("Single-Leg Leg Extension",2,"15",8,"1-2min"), ex("Single-Leg Lying Leg Curl",2,"15",8,"1-2min"),
+      ex("Machine Seated Hip Abduction",3,"15",7,"1-2min"), ex("Standing Calf Raise",2,"12",8,"1-2min"),
+      ex("Plank",3,"20sec",8,"1-2min") ]},
+    { day: "Shoulders & Arms", exercises: [
+      ex("Military Press",3,"6",7,"3-4min"), ex("Dumbbell Lateral Raise",3,"12",8,"1-2min"),
+      ex("Cable Reverse Flye",3,"15",8,"1-2min"), ex("Single-Arm Rope Tricep Extension",2,"12",8,"1-2min"),
+      ex("Single-Arm Cable Curl",2,"12",8,"1-2min") ]},
+  ], B: [
+    { day: "Chest & Triceps", exercises: [
+      ex("Barbell Bench Press",3,"8",8,"3-4min"), ex("Machine Incline Chest Press",3,"12",8,"2-3min"),
+      ex("Pec Deck",3,"12",8,"1-2min"), ex("Assisted Dip",3,"6",8,"1-2min"),
+      ex("Cable Tricep Kickback",3,"15",8,"1-2min") ]},
+    { day: "Legs & Abs", exercises: [
+      ex("Deadlift",3,"5",8,"3-4min"), ex("Goblet Squat",3,"12",8,"2-3min"),
+      ex("Dumbbell Single-Leg Hip Thrust",3,"10",9,"2-3min"), ex("Leg Press",3,"12",8,"1-2min"),
+      ex("Lying Leg Curl",3,"15",9,"1-2min"), ex("Standing Calf Raise",3,"8",8,"1-2min"),
+      ex("Bicycle Crunch",3,"12",8,"1-2min") ]},
+    { day: "Back & Biceps", exercises: [
+      ex("Lat Pulldown",3,"6",8,"2-3min"), ex("Dumbbell Row",3,"12",8,"2-3min"),
+      ex("Barbell Bent Over Row",3,"12",8,"2-3min"), ex("Reverse Pec Deck",3,"15",8,"1-2min"),
+      ex("EZ Bar Curl",3,"15",8,"1-2min") ]},
+    { day: "Legs & Abs 2", exercises: [
+      ex("Back Squat",3,"8",8,"3-4min"), ex("Barbell Hip Thrust",3,"8",8,"2-3min"),
+      ex("Romanian Deadlift",3,"12",8,"2-3min"), ex("Seated Leg Curl",3,"8",9,"1-2min"),
+      ex("Standing Calf Raise",3,"6",9,"1-2min"), ex("Hanging Leg Raise",3,"6",8,"1-2min"),
+      ex("Machine Seated Hip Abduction",3,"20",9,"1-2min") ]},
+    { day: "Shoulders & Arms", exercises: [
+      ex("Dumbbell Seated Shoulder Press",3,"10",8,"3-4min"), ex("Cable Lateral Raise",3,"10",8,"1-2min"),
+      ex("Dumbbell Bent Over Lateral Raise",3,"12",8,"1-2min"), ex("Dumbbell Floor Press",2,"15",8,"1-2min"),
+      ex("Hammer Curl",2,"8",8,"1-2min") ]},
+  ]}},
+};
+
+/* ---------------- Storage helpers (real localStorage, works fully offline) ---------------- */
+const store = {
+  get(key, fallback) {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+    catch { return fallback; }
+  },
+  set(key, value) { localStorage.setItem(key, JSON.stringify(value)); },
+};
+
+/* ---------------- Official exercise video links (from Fundamentals Hypertrophy Program, pg 88-91) ---------------- */
+const VIDEO_LINKS = {
+  "Back Squat": "dW5-C1fsMjk",
+  "Deadlift": "fc4_hq7tjkU",
+  "Romanian Deadlift": "SE-2Y-3a1pY",
+  "Dumbbell Walking Lunge": "vni4lElTvsY",
+  "Barbell Hip Thrust": "RjWiwq1wgFg",
+  "Leg Extension": "YyvSfVjQeL0",
+  "Lying Leg Curl": "1Tq3QdYUuHs",
+  "Standing Calf Raise": "7AVIgDN72c0",
+  "Single-Leg Leg Extension": "3VIpG6rtFAc",
+  "Single-Leg Lying Leg Curl": "lQSlJHtsnRA",
+  "Machine Seated Hip Abduction": "-seSnS4N8Xo",
+  "Crunch": "NGRKFMKhF8s",
+  "Plank": "kL_NJAkCQBg",
+  "Barbell Bench Press": "esQi683XR44",
+  "Dumbbell Incline Press": "ggJycLjz01E",
+  "Military Press": "CnBmiBqp-AI",
+  "Cable Flye": "KJwiu8ttuZ0",
+  "Assisted Dip": "wjUmnZH528Y",
+  "Dumbbell Skull Crusher": "ZUZOn9c1VVI",
+  "Single-Arm Rope Tricep Extension": "FxK2mF0iPXs",
+  "Dumbbell Lateral Raise": "6m7JO28RqZg",
+  "Reverse Grip Lat Pulldown": "apzFTbsm7HU",
+  "Cable Seated Row": "4mRy8U542Fo",
+  "Chest-Supported T-Bar Row": "w0KnlQ-b7jw",
+  "Seated Face Pull": "HSoHeSjvIdY",
+  "Cable Reverse Flye": "QnXb1dh_RjQ",
+  "Dumbbell Supinated Curl": "ykJmrZ5v0Oo",
+};
+function videoUrlFor(name) {
+  const id = VIDEO_LINKS[name];
+  if (id) return `https://www.youtube.com/watch?v=${id}`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(name + " exercise tutorial form")}`;
+}
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const last14Days = () => {
+  const out = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    out.push(d.toISOString().slice(0, 10));
+  }
+  return out;
+};
+const phaseForWeek = (w) => (w <= 4 ? "A" : "B");
+
+const DEFAULT_SETTINGS = { calorieTarget: 2260, proteinTarget: 195, split: "fullbody", week: 1, weightUnit: "kg" };
+
+/* ---------------- App state ---------------- */
+let state = {
+  tab: "nutrition",
+  settings: store.get("settings", DEFAULT_SETTINGS),
+  nutritionToday: store.get(`nutrition:${todayStr()}`, { calories: "", protein: "" }),
+  bodyWeightToday: (store.get(`bodyweight:${todayStr()}`, null) || {}).weight ?? "",
+  dayIndex: 0,
+  workoutLog: {},
+};
+
+function loadWorkoutLog() {
+  const phase = phaseForWeek(state.settings.week);
+  const dayName = PROGRAMS[state.settings.split].phases[phase][state.dayIndex].day;
+  const key = `workout:${todayStr()}:${state.settings.split}:${dayName}`;
+  const existing = store.get(key, null);
+  if (existing) { state.workoutLog = existing; return; }
+  const template = {};
+  PROGRAMS[state.settings.split].phases[phase][state.dayIndex].exercises.forEach((e) => {
+    template[e.name] = Array.from({ length: e.sets }, () => ({ weight: "", reps: "" }));
+  });
+  state.workoutLog = template;
+}
+loadWorkoutLog();
+
+function flashSaved() {
+  const el = document.getElementById("saved-flash");
+  if (!el) return;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 1300);
+}
+
+/* ---------------- Tiny SVG line chart (no dependencies) ---------------- */
+function svgLineChart(seriesList, { width = 300, height = 140, labels }) {
+  const pad = { top: 10, right: 8, bottom: 20, left: 30 };
+  const w = width - pad.left - pad.right;
+  const h = height - pad.top - pad.bottom;
+  let allVals = [];
+  seriesList.forEach((s) => s.data.forEach((v) => { if (v !== null && v !== undefined) allVals.push(v); }));
+  if (allVals.length === 0) allVals = [0, 1];
+  let min = Math.min(...allVals), max = Math.max(...allVals);
+  if (min === max) { min -= 1; max += 1; }
+  const range = max - min;
+  const n = labels.length;
+  const xFor = (i) => pad.left + (n === 1 ? 0 : (i / (n - 1)) * w);
+  const yFor = (v) => pad.top + h - ((v - min) / range) * h;
+
+  let svg = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}">`;
+  // gridlines
+  for (let gy = 0; gy <= 2; gy++) {
+    const y = pad.top + (gy / 2) * h;
+    svg += `<line x1="${pad.left}" y1="${y}" x2="${width - pad.right}" y2="${y}" stroke="#292524" stroke-width="1" />`;
+  }
+  seriesList.forEach((s) => {
+    let points = [];
+    let path = "";
+    s.data.forEach((v, i) => {
+      if (v === null || v === undefined) return;
+      const x = xFor(i), y = yFor(v);
+      path += (points.length === 0 ? "M" : "L") + x.toFixed(1) + "," + y.toFixed(1) + " ";
+      points.push([x, y]);
+    });
+    if (path) svg += `<path d="${path}" fill="none" stroke="${s.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />`;
+    points.forEach(([x, y]) => { if (s.dots) svg += `<circle cx="${x}" cy="${y}" r="2.5" fill="${s.color}" />`; });
+  });
+  // x labels (every 3rd)
+  labels.forEach((lab, i) => {
+    if (i % 3 !== 0 && i !== n - 1) return;
+    svg += `<text x="${xFor(i)}" y="${height - 4}" font-size="9" fill="#78716c" text-anchor="middle">${lab}</text>`;
+  });
+  // y labels
+  svg += `<text x="${pad.left - 4}" y="${pad.top + 4}" font-size="9" fill="#78716c" text-anchor="end">${Math.round(max)}</text>`;
+  svg += `<text x="${pad.left - 4}" y="${height - pad.bottom}" font-size="9" fill="#78716c" text-anchor="end">${Math.round(min)}</text>`;
+  svg += `</svg>`;
+  return svg;
+}
+
+/* ---------------- Icons (minimal inline SVG) ---------------- */
+const ICONS = {
+  flame: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,
+  beef: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12.5" cy="8.5" r="6.5"/><path d="M9 19.5c-1.5 1-3.5 1-5-1"/><path d="M4 4c-1.5 1.5-2 3-2 4.5"/></svg>`,
+  scale: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 7v5l3 3"/></svg>`,
+  dumbbell: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg>`,
+  trending: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
+  settings: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`,
+};
+
+/* ---------------- Render ---------------- */
+function render() {
+  const app = document.getElementById("app");
+  const s = state.settings;
+
+  let html = `
+    <header>
+      <div>
+        <h1>Recomp Log</h1>
+        <p>${new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</p>
+      </div>
+      <span id="saved-flash">✓ Saved</span>
+    </header>
+    <main>`;
+
+  if (state.tab === "nutrition") {
+    const bw = state.bodyWeightToday;
+    html += `
+      <section>
+        <div class="row-between">
+          <span class="label">${ICONS.scale.replace("currentColor","#38bdf8")} Body weight</span>
+        </div>
+        <div class="row-gap">
+          <input type="number" inputmode="decimal" step="0.1" id="bw-input" placeholder="Weight in ${s.weightUnit}" value="${bw}" />
+          <button class="btn btn-secondary btn-inline" id="bw-save" style="width:auto;">Log</button>
+        </div>
+      </section>
+
+      <section>
+        <div class="row-between">
+          <span class="label">${ICONS.flame.replace("currentColor","#fb923c")} Calories</span>
+          <span class="sublabel">${state.nutritionToday.calories || 0} / ${s.calorieTarget} kcal</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${Math.min(100, Math.round(((Number(state.nutritionToday.calories)||0)/s.calorieTarget)*100))}%; background:#fb923c;"></div></div>
+        <input type="number" inputmode="numeric" id="cal-input" placeholder="Enter calories eaten today" value="${state.nutritionToday.calories}" />
+      </section>
+
+      <section>
+        <div class="row-between">
+          <span class="label">${ICONS.beef.replace("currentColor","#fb7185")} Protein</span>
+          <span class="sublabel">${state.nutritionToday.protein || 0} / ${s.proteinTarget} g</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${Math.min(100, Math.round(((Number(state.nutritionToday.protein)||0)/s.proteinTarget)*100))}%; background:#fb7185;"></div></div>
+        <input type="number" inputmode="numeric" id="pro-input" placeholder="Enter grams of protein eaten today" value="${state.nutritionToday.protein}" />
+      </section>
+
+      <button class="btn" id="save-nutrition">Save today's intake</button>
+    `;
+  }
+
+  if (state.tab === "workout") {
+    const phase = phaseForWeek(s.week);
+    const days = PROGRAMS[s.split].phases[phase];
+    const activeDay = days[state.dayIndex];
+    html += `
+      <div class="row-gap" style="margin-bottom:14px;">
+        <select id="split-select">
+          ${Object.entries(PROGRAMS).map(([k, v]) => `<option value="${k}" ${k===s.split?"selected":""}>${v.label}</option>`).join("")}
+        </select>
+        <select id="week-select" style="max-width:110px;">
+          ${Array.from({length:8},(_,i)=>i+1).map(w=>`<option value="${w}" ${w===s.week?"selected":""}>Week ${w}</option>`).join("")}
+        </select>
+      </div>
+      <div class="chip-row">
+        ${days.map((d,i)=>`<button class="chip ${i===state.dayIndex?"active":""}" data-day="${i}">${d.day}</button>`).join("")}
+      </div>
+    `;
+    activeDay.exercises.forEach((e) => {
+      html += `<div class="card">
+        <div class="row-between" style="margin-bottom:2px;">
+          <h3>${e.name}</h3>
+          <span class="meta">RPE ${e.rpe} · rest ${e.rest}</span>
+        </div>
+        <div class="row-between" style="margin-bottom:6px;">
+          <span class="meta">${e.sets} sets × ${e.reps} reps</span>
+          <a class="watch-link" href="${videoUrlFor(e.name)}" target="_blank" rel="noopener">${VIDEO_LINKS[e.name] ? "▶ Watch Jeff's demo" : "▶ Watch form"}</a>
+        </div>`;
+      (state.workoutLog[e.name] || []).forEach((set, si) => {
+        html += `<div class="set-row">
+          <span>Set ${si+1}</span>
+          <input type="number" inputmode="decimal" placeholder="${s.weightUnit}" value="${set.weight}" data-ex="${e.name}" data-set="${si}" data-field="weight" class="wt-input" />
+          <input type="number" inputmode="numeric" placeholder="reps" value="${set.reps}" data-ex="${e.name}" data-set="${si}" data-field="reps" class="wt-input" />
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    html += `<button class="btn" id="save-workout">Save workout</button>`;
+  }
+
+  if (state.tab === "progress") {
+    const bwHist = last14Days().map(d => (store.get(`bodyweight:${d}`, null)||{}).weight ?? null);
+    const nutHist = last14Days().map(d => store.get(`nutrition:${d}`, null));
+    const labels = last14Days().map(d => d.slice(5));
+    const calData = nutHist.map(n => n && n.calories ? Number(n.calories) : null);
+    const proData = nutHist.map(n => n && n.protein ? Number(n.protein) : null);
+
+    html += `
+      <div style="margin-bottom:20px;">
+        <div class="label" style="margin-bottom:10px;">${ICONS.scale.replace("currentColor","#38bdf8")} Body weight (${s.weightUnit})</div>
+        <div class="chart-box">${svgLineChart([{data: bwHist, color:"#38bdf8", dots:true}], {labels})}</div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:10px;">${ICONS.trending.replace("currentColor","#34d399")} Last 14 days</div>
+        <div class="chart-box">${svgLineChart([{data: calData, color:"#fb923c"}, {data: proData, color:"#fb7185"}], {labels})}</div>
+        <div class="legend">
+          <span><span class="dot" style="background:#fb923c;"></span>Calories</span>
+          <span><span class="dot" style="background:#fb7185;"></span>Protein (g)</span>
+        </div>
+      </div>
+    `;
+  }
+
+  if (state.tab === "settings") {
+    html += `
+      <div class="sublabel">Body weight unit</div>
+      <div class="unit-toggle">
+        <button data-unit="kg" class="${s.weightUnit==='kg'?'active':''}">kg</button>
+        <button data-unit="lb" class="${s.weightUnit==='lb'?'active':''}">lb</button>
+      </div>
+      <div style="margin-top:18px;">
+        <div class="sublabel">Daily calorie target</div>
+        <input type="number" id="cal-target" value="${s.calorieTarget}" />
+      </div>
+      <div style="margin-top:14px;">
+        <div class="sublabel">Daily protein target (g)</div>
+        <input type="number" id="pro-target" value="${s.proteinTarget}" />
+      </div>
+      <p class="note">Targets are based on The Ultimate Guide to Body Recomposition (Nippard & Barakat). Workout plan is Jeff Nippard's Fundamentals Hypertrophy Program. Update your targets here any time your weight or body fat % changes.</p>
+      <p class="note">All data is stored only on this device. Clearing your browser data will erase it.</p>
+    `;
+  }
+
+  html += `</main>
+    <nav>
+      <button data-tab="nutrition" class="${state.tab==='nutrition'?'active':''}">${ICONS.flame}Nutrition</button>
+      <button data-tab="workout" class="${state.tab==='workout'?'active':''}">${ICONS.dumbbell}Workout</button>
+      <button data-tab="progress" class="${state.tab==='progress'?'active':''}">${ICONS.trending}Progress</button>
+      <button data-tab="settings" class="${state.tab==='settings'?'active':''}">${ICONS.settings}Settings</button>
+    </nav>`;
+
+  app.innerHTML = html;
+  attachHandlers();
+}
+
+function attachHandlers() {
+  document.querySelectorAll("nav button[data-tab]").forEach((btn) => {
+    btn.onclick = () => { state.tab = btn.dataset.tab; render(); };
+  });
+
+  if (state.tab === "nutrition") {
+    document.getElementById("cal-input").oninput = (e) => state.nutritionToday.calories = e.target.value;
+    document.getElementById("pro-input").oninput = (e) => state.nutritionToday.protein = e.target.value;
+    document.getElementById("bw-input").oninput = (e) => state.bodyWeightToday = e.target.value;
+    document.getElementById("save-nutrition").onclick = () => {
+      store.set(`nutrition:${todayStr()}`, state.nutritionToday);
+      flashSaved();
+    };
+    document.getElementById("bw-save").onclick = () => {
+      if (!state.bodyWeightToday) return;
+      store.set(`bodyweight:${todayStr()}`, { weight: Number(state.bodyWeightToday) });
+      flashSaved();
+    };
+  }
+
+  if (state.tab === "workout") {
+    document.getElementById("split-select").onchange = (e) => {
+      state.settings.split = e.target.value; state.dayIndex = 0;
+      store.set("settings", state.settings); loadWorkoutLog(); render();
+    };
+    document.getElementById("week-select").onchange = (e) => {
+      state.settings.week = Number(e.target.value);
+      store.set("settings", state.settings); loadWorkoutLog(); render();
+    };
+    document.querySelectorAll(".chip[data-day]").forEach((chip) => {
+      chip.onclick = () => { state.dayIndex = Number(chip.dataset.day); loadWorkoutLog(); render(); };
+    });
+    document.querySelectorAll(".wt-input").forEach((inp) => {
+      inp.oninput = (e) => {
+        const { ex: exName, set, field } = e.target.dataset;
+        state.workoutLog[exName][Number(set)][field] = e.target.value;
+      };
+    });
+    document.getElementById("save-workout").onclick = () => {
+      const phase = phaseForWeek(state.settings.week);
+      const dayName = PROGRAMS[state.settings.split].phases[phase][state.dayIndex].day;
+      store.set(`workout:${todayStr()}:${state.settings.split}:${dayName}`, state.workoutLog);
+      flashSaved();
+    };
+  }
+
+  if (state.tab === "settings") {
+    document.querySelectorAll(".unit-toggle button").forEach((btn) => {
+      btn.onclick = () => {
+        state.settings.weightUnit = btn.dataset.unit;
+        store.set("settings", state.settings); render();
+      };
+    });
+    document.getElementById("cal-target").onchange = (e) => {
+      state.settings.calorieTarget = Number(e.target.value); store.set("settings", state.settings);
+    };
+    document.getElementById("pro-target").onchange = (e) => {
+      state.settings.proteinTarget = Number(e.target.value); store.set("settings", state.settings);
+    };
+  }
+}
+
+render();
+
+/* ---------------- PWA install + service worker ---------------- */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+let deferredPrompt;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById("install-banner").style.display = "flex";
+});
+document.getElementById("install-btn").onclick = async () => {
+  document.getElementById("install-banner").style.display = "none";
+  if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; }
+};
+window.addEventListener("appinstalled", () => {
+  document.getElementById("install-banner").style.display = "none";
+});
+</script>
+</body>
+</html>
